@@ -13,6 +13,10 @@ BLOCK_SIZE=30 # will try this for now, means the game grid will be 300 wide and 
 # Therefore the blocks will start from [50 + 3*BLOCK_SIZE,100] i.e. 3 blocks into the grid
 # The square starts at [50 + 4*BLOCK_SIZE, 100 ]
 START=[ 50 + 3*BLOCK_SIZE , 100 ]
+RIGHT_EDGE=350
+LEFT_EDGE=50 # can softcode these in later but for now it's fine
+UPPER_EDGE=100
+LOWER_EDGE=700
 
 # make a block class. Each "shape" is made of 4 blocks
 class Block:
@@ -35,47 +39,68 @@ class Shape:
         self.y = START[1]
 
         if shape == 1 :
+            self.colour=RED
             self.b1 = Block( self.x, self.y )
             self.b2 = Block( self.x + BLOCK_SIZE, self.y ) # second block is one along
             self.b3 = Block( self.x, self.y + BLOCK_SIZE )
             self.b4 = Block( self.x + BLOCK_SIZE, self.y + BLOCK_SIZE ) # 4th block is three along
         elif shape == 2:
+            self.colour=BLUE
             self.b1 = Block( self.x, self.y )
             self.b2 = Block( self.x + BLOCK_SIZE , self.y )
             self.b3 = Block( self.x + 2*BLOCK_SIZE , self.y )
             self.b4 = Block( self.x + 3*BLOCK_SIZE , self.y )
         elif shape == 3:
+            self.colour=GREEN
             self.b1 = Block( self.x + BLOCK_SIZE , self.y )
             self.b2 = Block( self.x + 2*BLOCK_SIZE , self.y )
             self.b3 = Block( self.x , self.y + BLOCK_SIZE )
             self.b4 = Block( self.x + BLOCK_SIZE, self.y + BLOCK_SIZE )
         elif shape == 4:
+            self.colour=YELLOW
             self.b1 = Block( self.x , self.y )
             self.b2 = Block( self.x + BLOCK_SIZE , self.y )
             self.b3 = Block( self.x + BLOCK_SIZE, self.y + BLOCK_SIZE )
             self.b4 = Block( self.x + 2*BLOCK_SIZE, self.y + BLOCK_SIZE )
         elif shape == 5:
+            self.colour=PURPLE
             self.b1 = Block( self.x , self.y )
             self.b2 = Block( self.x + BLOCK_SIZE , self.y )
             self.b3 = Block( self.x + 2*BLOCK_SIZE, self.y )
             self.b4 = Block( self.x + BLOCK_SIZE, self.y + BLOCK_SIZE )
         elif shape == 6: # should probably put this so it comes out layer by layer, can do this later
+            self.colour=ORANGE
             self.b1 = Block( self.x , self.y + BLOCK_SIZE)
             self.b2 = Block( self.x + BLOCK_SIZE , self.y + BLOCK_SIZE)
             self.b3 = Block( self.x + 2*BLOCK_SIZE , self.y + BLOCK_SIZE )
             self.b4 = Block( self.x + 2*BLOCK_SIZE, self.y )
         elif shape == 7:
+            self.colour=CYAN
             self.b1 = Block( self.x , self.y + BLOCK_SIZE)
             self.b2 = Block( self.x + BLOCK_SIZE , self.y + BLOCK_SIZE)
             self.b3 = Block( self.x + 2*BLOCK_SIZE , self.y + BLOCK_SIZE )
             self.b4 = Block( self.x , self.y )
 
 
-        self.shape_vect = [ self.b1, self.b2, self.b3, self.b4 ]
+        self.shape_x = [] # These contains the top right coordinates of each block in the shape
+        self.shape_y = []
+        for block in [self.b1, self.b2, self.b3, self.b4] :
+            self.shape_x.append( block.x )
+            self.shape_y.append( block.y )
 
-    def drop(self): # method to drop one layer
-        for block in self.shape_vect:
-            block.y+=BLOCK_SIZE
+    def drop_one(self): # method to drop one layer
+        for _ in range(4):
+            self.shape_y[_]+=BLOCK_SIZE
+
+    def move_right(self): # move piece right
+        if max(self.shape_x) < RIGHT_EDGE - BLOCK_SIZE:
+            for _ in range(4):
+                self.shape_x[_]+=BLOCK_SIZE
+
+    def move_left(self): # move piece left
+        if min(self.shape_x) > LEFT_EDGE:
+            for _ in range(4):
+                self.shape_x[_]-=BLOCK_SIZE
 
 
 # initialise pygame
@@ -84,11 +109,14 @@ pygame.init()
 # Define some colors (capitals mean these are constants)
 BLACK    = (   0,   0,   0)
 WHITE    = ( 255, 255, 255)
+GREY     = ( 126, 126, 126)
 GREEN    = (   0, 255,   0)
 RED      = ( 255,   0,   0)
 BLUE     = (   0,   0, 255)
 YELLOW   = ( 255, 255,   0)
-GREY     = ( 126, 126, 126)
+ORANGE   = ( 255, 140,   0)
+PURPLE   = ( 139,   0, 139)
+CYAN     = (   0, 255, 255)
 
 
 # open a window
@@ -98,8 +126,8 @@ pygame.display.set_caption("Tetris") # title in window bar
 score = 0
 font = pygame.font.SysFont('Times', 25, True, False)
 
-# Initialise blocks
-shape1=Shape(7)
+# put a new block in
+shape1=Shape(3)
 
 # Loop until the user clicks the close button.
 done = False
@@ -123,25 +151,25 @@ while not done:
     for event in pygame.event.get(): # User did something
         if event.type == pygame.QUIT: # If user clicked close
             done = True # Flag that we are done so we exit this loop
-
-# quit if we type ESC key
         elif event.type == pygame.KEYDOWN: # not sure what this bit does yet but it is necessary
-# OK KEYDOWN says the event was a key was pressed, whereas KEYUP means a key was released. It must
-# set the value of event.key
             if event.key == pygame.K_ESCAPE:
                 done = True
- 
+            elif event.key == pygame.K_LEFT:
+                shape1.move_left()
+            elif event.key == pygame.K_RIGHT:
+                shape1.move_right()
 
-# ---- 1. Fill screen in black -----
     screen.fill(BLACK)
 
-    for _ in range(4):
-        pygame.draw.rect(screen,RED,[ shape1.shape_vect[_].x, shape1.shape_vect[_].y, BLOCK_SIZE, BLOCK_SIZE ])
-    shape1.drop()
-    # print(s1.shape_vect[0].x)
+# 1. Stop them when they get to the bottom
 
-    # pygame.draw.rect(screen,RED,[ s1.x+1, s1.y+1, BLOCK_SIZE, BLOCK_SIZE ]) # -1 so it fits in the grid outline
-    # s1.y += s1.speed_y
+    
+    for _ in range(4):
+        pygame.draw.rect(screen,shape1.colour,[ shape1.shape_x[_], shape1.shape_y[_], BLOCK_SIZE, BLOCK_SIZE ])
+
+    # print(shape1.shape_vector[:,0])
+    if max(shape1.shape_y) < 700 - BLOCK_SIZE: 
+        shape1.drop_one()
 
 
 # 1.b draw the game area
@@ -164,7 +192,7 @@ while not done:
     pygame.display.flip()
  
     # --- Limit to 60 frames per second
-    clock.tick(1)
+    clock.tick(5)
 
 
 # After we leave the loop, quit pygame properly
