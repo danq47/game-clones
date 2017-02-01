@@ -13,6 +13,7 @@
 import pygame
 import math
 import random
+import numpy as np
 
 XMAX=700
 YMAX=750
@@ -186,23 +187,60 @@ while not done:
         pass
 
 
+# 3. Check that there is nothing below the piece, if it's clear then drop, if not save
+    def check_if_clear():
+        if max(falling_piece.shape_y) < 700 - BLOCK_SIZE : # if we're above the bottom
+            for _ in range( len(saved) ) : # Almost certainly not the best way to do this
+                for ixx in range(4) : # loop over the 4 pieces (one or two are redundant in most pieces, but we won't worry about that now)
+                # print("falling_piece.shape_x[",ixx,"]:",falling_piece.shape_x[ixx])
+                # print("saved[0]:",saved[0])
+                    if falling_piece.shape_x[ixx] == saved[_][0] and falling_piece.shape_y[ixx] == saved[_][1] - BLOCK_SIZE :
+                    # print("test")
+                        return False
+            return True
+        else:
+            return False
+
+        # return 1
+
+        # for _ in range(4): 
+        #     piece_coords = [ falling_piece.shape_x[_], falling_piece.shape_y[_] ]
+        #     for x in range( len(saved) ): # Almost certainly not the best way to do this
+
+
+#             # if any( saved   [ piece_coords[0] , piece_coords[1] ] 
+
 # 3. Print the block as it is falling and stop it once it hits the bottom
-    if max(falling_piece.shape_y) < 700 - BLOCK_SIZE: 
+    # if max(falling_piece.shape_y) < 700 - BLOCK_SIZE: 
+    # if max(falling_piece.shape_y) < 700 - BLOCK_SIZE :
+    if check_if_clear() :
+        # check_if_clear()
         falling_piece.drop_one()
         for _ in range(4):
             pygame.draw.rect(screen,falling_piece.colour,[ falling_piece.shape_x[_], falling_piece.shape_y[_], BLOCK_SIZE, BLOCK_SIZE ])
-        
+        # else:
+        #     for _ in range(4):
+        #         saved.append( [ falling_piece.shape_x[_], falling_piece.shape_y[_], falling_piece.colour ] )
     else:
-        saved.append([ falling_piece.shape_x, falling_piece.shape_y, falling_piece.colour ]) # Save the blocks that have reached the bottom
+        for _ in range(4):
+            saved.append( [ falling_piece.shape_x[_], falling_piece.shape_y[_], falling_piece.colour ] )
+        # saved.append([falling_piece.shape_x, falling_piece.shape_y, falling_piece.colour]) # Save the blocks that have reached the bottom
+        # print(saved)
         del(falling_piece)
 
-# 4. Print the saved blocks (ones that have reached the bottom)
+# # 4. Print the saved blocks (ones that have reached the bottom)
     for block in saved:
-        for _ in range(4):
-            colour=block[2]
-            x=block[0][_]
-            y=block[1][_]
-            pygame.draw.rect(screen, colour, [ x, y, BLOCK_SIZE, BLOCK_SIZE ])
+        colour = block[2]
+        x      = block[0]
+        y      = block[1]
+        pygame.draw.rect( screen, colour, [ x, y, BLOCK_SIZE, BLOCK_SIZE ] )
+
+
+
+
+
+
+
 
 
 # 1.b draw the game area
