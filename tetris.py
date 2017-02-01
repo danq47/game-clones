@@ -1,5 +1,14 @@
-# First example of a pygame script
-# Can use this as a template for later games
+# Tetris clone
+
+# TODO
+# 1. Rotate using spacebar
+# 2. Stop when the piece is blocked by lower pieces
+# 3. Clear the line if we have a full line
+# 4. Look into scoring
+# 5. Drop instantly using K_DOWN
+# 6. Show outline of where the piece is due to land
+# 7. Implement levels
+# 8. Implement a high score system
 
 import pygame
 import math
@@ -125,9 +134,8 @@ screen = pygame.display.set_mode(size)
 pygame.display.set_caption("Tetris") # title in window bar
 score = 0
 font = pygame.font.SysFont('Times', 25, True, False)
+saved=[]
 
-# put a new block in
-shape1=Shape(3)
 
 # Loop until the user clicks the close button.
 done = False
@@ -151,25 +159,50 @@ while not done:
     for event in pygame.event.get(): # User did something
         if event.type == pygame.QUIT: # If user clicked close
             done = True # Flag that we are done so we exit this loop
-        elif event.type == pygame.KEYDOWN: # not sure what this bit does yet but it is necessary
+        elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 done = True
             elif event.key == pygame.K_LEFT:
-                shape1.move_left()
+                try: # This is necessary, as it is possible at this stage that a new piece hasn't been instantiated yet
+                    falling_piece.move_left()   # this would mean we'd be trying to move a piece that doesn't exist
+                except NameError:
+                    pass
             elif event.key == pygame.K_RIGHT:
-                shape1.move_right()
+                try:
+                    falling_piece.move_right()
+                except NameError:
+                    pass
 
+# 1. Fill the screen with black
     screen.fill(BLACK)
 
-# 1. Stop them when they get to the bottom
+# 2. Start a block falling. Check to see if a block already exists, and if not, instantiate it
 
-    
-    for _ in range(4):
-        pygame.draw.rect(screen,shape1.colour,[ shape1.shape_x[_], shape1.shape_y[_], BLOCK_SIZE, BLOCK_SIZE ])
+    try:
+        falling_piece
+    except NameError:
+        falling_piece=Shape(random.randint(1,7))
+    else:
+        pass
 
-    # print(shape1.shape_vector[:,0])
-    if max(shape1.shape_y) < 700 - BLOCK_SIZE: 
-        shape1.drop_one()
+
+# 3. Print the block as it is falling and stop it once it hits the bottom
+    if max(falling_piece.shape_y) < 700 - BLOCK_SIZE: 
+        falling_piece.drop_one()
+        for _ in range(4):
+            pygame.draw.rect(screen,falling_piece.colour,[ falling_piece.shape_x[_], falling_piece.shape_y[_], BLOCK_SIZE, BLOCK_SIZE ])
+        
+    else:
+        saved.append([ falling_piece.shape_x, falling_piece.shape_y, falling_piece.colour ]) # Save the blocks that have reached the bottom
+        del(falling_piece)
+
+# 4. Print the saved blocks (ones that have reached the bottom)
+    for block in saved:
+        for _ in range(4):
+            colour=block[2]
+            x=block[0][_]
+            y=block[1][_]
+            pygame.draw.rect(screen, colour, [ x, y, BLOCK_SIZE, BLOCK_SIZE ])
 
 
 # 1.b draw the game area
