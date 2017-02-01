@@ -157,6 +157,38 @@ clock = pygame.time.Clock()
 
 while not done:
 #     # --- Main event loop
+
+# 1. Some functions to check that our moes are OK
+ 
+    def check_move_left(): # Check that we have space to move sideways
+        for _ in range ( len(saved) ) :
+            for ixx in range(4) : 
+                if falling_piece.shape_y[ixx] == saved[_][1] and falling_piece.shape_x[ixx] == saved[_][0] + BLOCK_SIZE :
+                    return False
+        return True
+
+    def check_move_right(): # Check that we have space to move sideways
+        for _ in range ( len(saved) ) :
+            for ixx in range(4) : 
+                if falling_piece.shape_y[ixx] == saved[_][1] and falling_piece.shape_x[ixx] == saved[_][0] - BLOCK_SIZE :
+                    return False
+        return True
+
+# check that there is nothing below the piece, if it's clear then drop, if not save
+    def check_if_clear():
+        if max(falling_piece.shape_y) < 700 - BLOCK_SIZE : # if we're above the bottom
+            for _ in range( len(saved) ) : # Almost certainly not the best way to do this
+                for ixx in range(4) : # loop over the 4 pieces (one or two are redundant in most pieces, but we won't worry about that now)
+                # print("falling_piece.shape_x[",ixx,"]:",falling_piece.shape_x[ixx])
+                # print("saved[0]:",saved[0])
+                    if falling_piece.shape_x[ixx] == saved[_][0] and falling_piece.shape_y[ixx] == saved[_][1] - BLOCK_SIZE :
+                    # print("test")
+                        return False
+            return True
+        else:
+            return False
+
+
     for event in pygame.event.get(): # User did something
         if event.type == pygame.QUIT: # If user clicked close
             done = True # Flag that we are done so we exit this loop
@@ -165,7 +197,8 @@ while not done:
                 done = True
             elif event.key == pygame.K_LEFT:
                 try: # This is necessary, as it is possible at this stage that a new piece hasn't been instantiated yet
-                    falling_piece.move_left()   # this would mean we'd be trying to move a piece that doesn't exist
+                    if check_move_left() : 
+                        falling_piece.move_left()   # this would mean we'd be trying to move a piece that doesn't exist
                 except NameError:
                     pass
             elif event.key == pygame.K_RIGHT:
@@ -187,28 +220,8 @@ while not done:
         pass
 
 
-# 3. Check that there is nothing below the piece, if it's clear then drop, if not save
-    def check_if_clear():
-        if max(falling_piece.shape_y) < 700 - BLOCK_SIZE : # if we're above the bottom
-            for _ in range( len(saved) ) : # Almost certainly not the best way to do this
-                for ixx in range(4) : # loop over the 4 pieces (one or two are redundant in most pieces, but we won't worry about that now)
-                # print("falling_piece.shape_x[",ixx,"]:",falling_piece.shape_x[ixx])
-                # print("saved[0]:",saved[0])
-                    if falling_piece.shape_x[ixx] == saved[_][0] and falling_piece.shape_y[ixx] == saved[_][1] - BLOCK_SIZE :
-                    # print("test")
-                        return False
-            return True
-        else:
-            return False
-
-        # return 1
-
-        # for _ in range(4): 
-        #     piece_coords = [ falling_piece.shape_x[_], falling_piece.shape_y[_] ]
-        #     for x in range( len(saved) ): # Almost certainly not the best way to do this
 
 
-#             # if any( saved   [ piece_coords[0] , piece_coords[1] ] 
 
 # 3. Print the block as it is falling and stop it once it hits the bottom
     # if max(falling_piece.shape_y) < 700 - BLOCK_SIZE: 
