@@ -2,7 +2,7 @@
 
 # TODO
 # 1. Rotate using spacebar
-# 2. Stop when the piece is blocked by lower pieces
+# 2. Stop when the piece is blocked by lower pieces - DONE
 # 3. Clear the line if we have a full line
 # 4. Look into scoring
 # 5. Drop instantly using K_DOWN
@@ -112,6 +112,38 @@ class Shape:
             for _ in range(4):
                 self.shape_x[_]-=BLOCK_SIZE
 
+    # def rotate(self)
+
+
+class Shape2:
+
+    def __init__ (self,shape):
+
+        self.shape = shape
+
+# We're going to have 7 different possible shapes, characterised by the variable "shape":
+# 1 = square, 2 = line, 3 = S, 4 = Z, 5 = T, 6 = L, 7 = backwards L
+        if shape == 1 :
+            self.piece_matrix = [ [0,0,0,0], [0,1,1,0], [0,1,1,0], [0,0,0,0] ] # no rotation (or 4x4)
+        elif shape == 2:
+            self.piece_matrix = [ [0,0,0,0], [0,0,0,0], [1,1,1,1], [0,0,0,0] ] # 4x4 rotation
+        elif shape == 3:
+            self.piece_matrix = [ [0,0,0], [1,1,0], [0,1,1] ] # 3x3 rotation embedded in a (4x4)
+        elif shape == 4:
+            self.piece_matrix = [ [0,0,0], [0,1,1], [1,1,0] ] # same for all below
+        elif shape == 5:
+            self.piece_matrix = [ [0,0,0], [1,1,1], [0,1,0] ]
+        elif shape == 6:
+            self.piece_matrix = [ [0,0,0], [1,1,1], [1,0,0] ]
+        elif shape == 7:
+            self.piece_matrix = [ [0,0,0], [1,1,1], [0,0,1] ]
+
+
+# Now we need somthing that will convert these ones and zeros into blocks
+
+    def rotate(self):
+        self.piece_matrix = map ( list, zip(*self.piece_matrix) )[::-1] # a few things are going on in this line. zip gives the transpose as a list of tuples, map (list) turns them back into lists, and then [::-1] reads that backwards, to give the rotated matrix (rotated anticlockwise by pi/4)
+
 
 # initialise pygame
 pygame.init()
@@ -159,7 +191,7 @@ while not done:
 #     # --- Main event loop
 
 # 1. Some functions to check that our moes are OK
- 
+
     def check_move_left(): # Check that we have space to move sideways
         for _ in range ( len(saved) ) :
             for ixx in range(4) : 
@@ -221,27 +253,19 @@ while not done:
 
 
 
-
-
 # 3. Print the block as it is falling and stop it once it hits the bottom
-    # if max(falling_piece.shape_y) < 700 - BLOCK_SIZE: 
-    # if max(falling_piece.shape_y) < 700 - BLOCK_SIZE :
+
     if check_if_clear() :
-        # check_if_clear()
+
         falling_piece.drop_one()
         for _ in range(4):
             pygame.draw.rect(screen,falling_piece.colour,[ falling_piece.shape_x[_], falling_piece.shape_y[_], BLOCK_SIZE, BLOCK_SIZE ])
-        # else:
-        #     for _ in range(4):
-        #         saved.append( [ falling_piece.shape_x[_], falling_piece.shape_y[_], falling_piece.colour ] )
     else:
         for _ in range(4):
             saved.append( [ falling_piece.shape_x[_], falling_piece.shape_y[_], falling_piece.colour ] )
-        # saved.append([falling_piece.shape_x, falling_piece.shape_y, falling_piece.colour]) # Save the blocks that have reached the bottom
-        # print(saved)
         del(falling_piece)
 
-# # 4. Print the saved blocks (ones that have reached the bottom)
+# 4. Print the saved blocks (ones that have reached the bottom)
     for block in saved:
         colour = block[2]
         x      = block[0]
@@ -250,7 +274,7 @@ while not done:
 
 
 
-
+# 5. 
 
 
 
