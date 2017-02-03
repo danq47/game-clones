@@ -2,7 +2,7 @@
 # Tetris clone
 
 # TODO
-# 1. Rotate using spacebar
+# 1. Rotate using spacebar - DONE
 # 2. Stop when the piece is blocked by lower pieces - DONE
 # 3. Clear the line if we have a full line
 # 4. Look into scoring
@@ -12,6 +12,7 @@
 # 8. Implement a high score system
 # 9. End if the top layer isn't clear
 # 10. Start with a spacebar
+# 11. When rotating, check that we won't rotate INTO other blocks
 
 import pygame
 import math
@@ -60,12 +61,73 @@ class Shape:
             self.piece_matrix = [ [0,0,0], [1,1,1], [0,0,1] ]
             self.colour       = CYAN
 
+        self.get_piece_coordinates() # get the coordinates of the piece
+
+
+
+    def get_piece_coordinates(self): # get the (top left) coordinates of the 4 blocks
+        self.x_coords=[]
+        self.y_coords=[]
+
+        for x_loop in range( len( self.piece_matrix ) ):
+            for y_loop in range( len( self.piece_matrix ) ):
+
+                if self.piece_matrix[y_loop][x_loop] == 1: # why is it this way around??
+                    self.x_coords.append(  self.x + (BLOCK_SIZE * x_loop)  ) # save piece coordinates so
+                    self.y_coords.append(  self.y + (BLOCK_SIZE * y_loop)  ) # we can check below it later
+
+
+
     def rotate(self):
         self.piece_matrix = zip(*self.piece_matrix) # Take the transpose, but now they are given in tuples, so we will have to map(list, matrix)
         self.piece_matrix = map ( list , self.piece_matrix )[::-1] # turn it back into lists, and then write backwards. This gives the matrix rotated 90degrees anticlockwise
+        self.get_piece_coordinates()
 
     def drop_one(self):
         self.y+=BLOCK_SIZE
+        self.get_piece_coordinates()
+
+
+    def move_right(self): # move piece right
+        if max(self.x_coords) < RIGHT_EDGE - BLOCK_SIZE:
+            self.x+=BLOCK_SIZE
+            self.get_piece_coordinates()
+
+    def move_left(self): # move piece left
+        if min(self.x_coords) > LEFT_EDGE:
+            self.x-=BLOCK_SIZE
+            self.get_piece_coordinates()
+
+
+
+
+# ----- Function definitions -----
+
+# check that there is nothing below the piece, if it's clear then drop, if not save
+def check_if_clear(piece_coords_x, piece_coords_y,saved):
+    if max(piece_coords_y) < 700 - BLOCK_SIZE : # if we're above the bottom
+        for _ in range( len(saved) ) : # Almost certainly not the best way to do this
+            for ixx in range(4) : # loop over the 4 pieces (one or two are redundant in most pieces, but we won't worry about that now)
+                if piece_coords_x[ixx] == saved[_][0] and piece_coords_y[ixx] == saved[_][1] - BLOCK_SIZE :
+                    return False
+        return True
+    else:
+        return False
+
+def check_move_left(piece_coords_x, piece_coords_y,saved): # Check that we have space to move sideways
+    for _ in range ( len(saved) ) :
+        for ixx in range(4) : 
+            if piece_coords_y == saved[_][1] and piece_coords_x[ixx] == saved[_][0] + BLOCK_SIZE :
+                return False
+    return True
+
+def check_move_right(piece_coords_x, piece_coords_y,saved): # Check that we have space to move sideways
+    for _ in range ( len(saved) ) :
+        for ixx in range(4) : 
+            if piece_coords_y[ixx] == saved[_][1] and piece_coords_x[ixx] == saved[_][0] - BLOCK_SIZE :
+                return False
+    return True
+
 
 # Define some colors (capitals mean these are constants)
 BLACK    = (   0,   0,   0)
@@ -91,7 +153,7 @@ saved=[] # These will be the stored pieces at the bottom that have stopped movin
 
 # get the blocks to drop
 drop = pygame.USEREVENT + 1 # this event is to drop the piece one block
-pygame.time.set_timer(drop, 100) # drop every 100 ms
+pygame.time.set_timer(drop, 400) # drop every 100 ms
 
 # Loop until the user clicks the close button.
 done = False
@@ -99,16 +161,7 @@ done = False
 # Used to manage how fast the screen updates
 clock = pygame.time.Clock()
 
-# check that there is nothing below the piece, if it's clear then drop, if not save
-def check_if_clear(piece_coords_x, piece_coords_y,saved):
-    if max(piece_coords_y) < 700 - BLOCK_SIZE : # if we're above the bottom
-        for _ in range( len(saved) ) : # Almost certainly not the best way to do this
-            for ixx in range(4) : # loop over the 4 pieces (one or two are redundant in most pieces, but we won't worry about that now)
-                if piece_coords_x[ixx] == saved[_][0] and piece_coords_y[ixx] == saved[_][1] - BLOCK_SIZE :
-                    return False
-        return True
-    else:
-        return False
+
 
 
 while not done:
@@ -120,11 +173,28 @@ while not done:
     for event in pygame.event.get(): # User did something
         if event.type == pygame.QUIT: # If user clicked close
             done = True # Flag that we are done so we exit this loop
+        elif event.type == drop:
+            try:
+                falling_piece.drop_one()
+            except NameError:
+                falling_piece=Shape(random.randint(1,7))
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 done = True
-        elif event.type == drop: 
-            falling_piece.drop_one()
+            elif event.key == pygame.K_SPACE:
+                falling_piece.rotate() 
+            elif event.key == pygame.K_RIGHT:
+                try:
+                    if check_move_right( falling_piece.x_coords, falling_piece.y_coords, saved ):
+                        falling_piece.move_right()
+                except NameError:
+                    pass
+            elif event.key == pygame.K_LEFT:
+                try:
+                    if check_move_left( falling_piece.x_coords, falling_piece.y_coords, saved ):
+                        falling_piece.move_left()
+                except NameError:
+                    pass
 
 # 1. Fill the screen with black
     screen.fill(BLACK)
@@ -139,30 +209,21 @@ while not done:
         pass
 
 # 3. Print block
-     
-    piece_coords_x = [] # will save the piece coordinates so we can check if there's anything below
-    piece_coords_y = []
 
-    for x_loop in range( len( falling_piece.piece_matrix ) ):
-        for y_loop in range( len( falling_piece.piece_matrix ) ):
+    for _ in range(4):
+        if falling_piece.y_coords[_] > UPPER_EDGE - BLOCK_SIZE:
+            pygame.draw.rect( screen, falling_piece.colour, [falling_piece.x_coords[_] ,\
+            falling_piece.y_coords[_], BLOCK_SIZE, BLOCK_SIZE])
 
-            if falling_piece.piece_matrix[y_loop][x_loop] == 1: # why is it this way around??
 
-                piece_coords_x.append(  falling_piece.x + (BLOCK_SIZE * x_loop)  ) # save piece coordinates so
-                piece_coords_y.append(  falling_piece.y + (BLOCK_SIZE * y_loop)  ) # we can check below it later
-
-                if falling_piece.y + (BLOCK_SIZE * (y_loop+1)) > UPPER_EDGE :
-                    pygame.draw.rect( screen, falling_piece.colour, [ falling_piece.x + (BLOCK_SIZE * x_loop),\
-                    falling_piece.y + (BLOCK_SIZE * y_loop) , BLOCK_SIZE, BLOCK_SIZE ] ) # draw piece
-
-# 4. Check if it is clear underneath current block. If not, save block's position, delete, and start a new block
-
-    if check_if_clear( piece_coords_x, piece_coords_y, saved ):
+# 4. Check if it is clear under block
+    if check_if_clear( falling_piece.x_coords, falling_piece.y_coords, saved ):
         pass # that's OK
     else: # save block positions, and delete block
         for _ in range(4):
-            saved.append( [ piece_coords_x[_], piece_coords_y[_], falling_piece.colour ] )
+            saved.append( [ falling_piece.x_coords[_], falling_piece.y_coords[_], falling_piece.colour ] )
         del(falling_piece)
+
 
 # 5. Print the saved blocks (ones that have reached the bottom)
     for block in saved:
@@ -171,8 +232,34 @@ while not done:
         y      = block[1]
         pygame.draw.rect( screen, colour, [ x, y, BLOCK_SIZE, BLOCK_SIZE ] )
 
+    # piece_coords_x = [] # will save the piece coordinates so we can check if there's anything below
+    # piece_coords_y = []
+
+    # for x_loop in range( len( falling_piece.piece_matrix ) ):
+    #     for y_loop in range( len( falling_piece.piece_matrix ) ):
+
+    #         if falling_piece.piece_matrix[y_loop][x_loop] == 1: # why is it this way around??
+
+    #             piece_coords_x.append(  falling_piece.x + (BLOCK_SIZE * x_loop)  ) # save piece coordinates so
+    #             piece_coords_y.append(  falling_piece.y + (BLOCK_SIZE * y_loop)  ) # we can check below it later
+
+    #             if falling_piece.y + (BLOCK_SIZE * (y_loop+1)) > UPPER_EDGE :
+    #                 pygame.draw.rect( screen, falling_piece.colour, [ falling_piece.x + (BLOCK_SIZE * x_loop),\
+    #                 falling_piece.y + (BLOCK_SIZE * y_loop) , BLOCK_SIZE, BLOCK_SIZE ] ) # draw piece
+
+# 4. Check if it is clear underneath current block. If not, save block's position, delete, and start a new block
+
+#     if check_if_clear( piece_coords_x, piece_coords_y, saved ):
+#         pass # that's OK
+#     else: # save block positions, and delete block
+#         for _ in range(4):
+#             saved.append( [ piece_coords_x[_], piece_coords_y[_], falling_piece.colour ] )
+#         del(falling_piece)
 
 
+
+
+# 6. Move pieces from left to right
 
 
 
