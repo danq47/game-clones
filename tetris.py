@@ -13,6 +13,7 @@
 # 9. End if the top layer isn't clear
 # 10. Start with a spacebar
 # 11. When rotating, check that we won't rotate INTO other blocks
+# 11b. Also need to check that the piece can't rotate out of the board
 
 import pygame
 import math
@@ -117,7 +118,7 @@ def check_if_clear(piece_coords_x, piece_coords_y,saved):
 def check_move_left(piece_coords_x, piece_coords_y,saved): # Check that we have space to move sideways
     for _ in range ( len(saved) ) :
         for ixx in range(4) : 
-            if piece_coords_y == saved[_][1] and piece_coords_x[ixx] == saved[_][0] + BLOCK_SIZE :
+            if piece_coords_y[ixx] == saved[_][1] and piece_coords_x[ixx] == saved[_][0] + BLOCK_SIZE :
                 return False
     return True
 
@@ -128,6 +129,12 @@ def check_move_right(piece_coords_x, piece_coords_y,saved): # Check that we have
                 return False
     return True
 
+def check_for_lines(stored_blocks): # check if we have any complete lines  
+    for row in range(20):
+        if sum(stored_blocks[row]) == 10:
+            print('test')
+        else:
+            return 0
 
 # Define some colors (capitals mean these are constants)
 BLACK    = (   0,   0,   0)
@@ -151,9 +158,10 @@ score = 0
 font = pygame.font.SysFont('Times', 25, True, False)
 saved=[] # These will be the stored pieces at the bottom that have stopped moving
 
+
 # get the blocks to drop
 drop = pygame.USEREVENT + 1 # this event is to drop the piece one block
-pygame.time.set_timer(drop, 400) # drop every 100 ms
+pygame.time.set_timer(drop, 500) # drop every 100 ms
 
 # Loop until the user clicks the close button.
 done = False
@@ -196,6 +204,7 @@ while not done:
                 except NameError:
                     pass
 
+
 # 1. Fill the screen with black
     screen.fill(BLACK)
 
@@ -208,7 +217,7 @@ while not done:
     else:
         pass
 
-# 3. Print block
+# 3. Print piece
 
     for _ in range(4):
         if falling_piece.y_coords[_] > UPPER_EDGE - BLOCK_SIZE:
@@ -216,57 +225,29 @@ while not done:
             falling_piece.y_coords[_], BLOCK_SIZE, BLOCK_SIZE])
 
 
-# 4. Check if it is clear under block
+# 4. Check if it is clear under piece
     if check_if_clear( falling_piece.x_coords, falling_piece.y_coords, saved ):
         pass # that's OK
     else: # save block positions, and delete block
         for _ in range(4):
             saved.append( [ falling_piece.x_coords[_], falling_piece.y_coords[_], falling_piece.colour ] )
+            # print(stored_blocks)
         del(falling_piece)
 
-
-# 5. Print the saved blocks (ones that have reached the bottom)
+# 5. Print the saved blocks (ones that have reached the bottom, or are on top of other blocks)
     for block in saved:
         colour = block[2]
         x      = block[0]
         y      = block[1]
         pygame.draw.rect( screen, colour, [ x, y, BLOCK_SIZE, BLOCK_SIZE ] )
 
-    # piece_coords_x = [] # will save the piece coordinates so we can check if there's anything below
-    # piece_coords_y = []
-
-    # for x_loop in range( len( falling_piece.piece_matrix ) ):
-    #     for y_loop in range( len( falling_piece.piece_matrix ) ):
-
-    #         if falling_piece.piece_matrix[y_loop][x_loop] == 1: # why is it this way around??
-
-    #             piece_coords_x.append(  falling_piece.x + (BLOCK_SIZE * x_loop)  ) # save piece coordinates so
-    #             piece_coords_y.append(  falling_piece.y + (BLOCK_SIZE * y_loop)  ) # we can check below it later
-
-    #             if falling_piece.y + (BLOCK_SIZE * (y_loop+1)) > UPPER_EDGE :
-    #                 pygame.draw.rect( screen, falling_piece.colour, [ falling_piece.x + (BLOCK_SIZE * x_loop),\
-    #                 falling_piece.y + (BLOCK_SIZE * y_loop) , BLOCK_SIZE, BLOCK_SIZE ] ) # draw piece
-
-# 4. Check if it is clear underneath current block. If not, save block's position, delete, and start a new block
-
-#     if check_if_clear( piece_coords_x, piece_coords_y, saved ):
-#         pass # that's OK
-#     else: # save block positions, and delete block
-#         for _ in range(4):
-#             saved.append( [ piece_coords_x[_], piece_coords_y[_], falling_piece.colour ] )
-#         del(falling_piece)
 
 
+# 6. Check for complete lines
 
+    # check_for_lines(stored_blocks)
 
-# 6. Move pieces from left to right
-
-
-
-
-
-
-
+    
 
 
 
@@ -280,6 +261,10 @@ while not done:
         pygame.draw.line(screen, GREY, [50 + BLOCK_SIZE*i , 100], [50 + BLOCK_SIZE*i , 700])
     for i in range(21):
         pygame.draw.line(screen, GREY, [50,100 + BLOCK_SIZE*i], [350,100 + BLOCK_SIZE*i])
+# 1.c Print score
+    score_to_print = font.render("SCORE:"+str(score),True,WHITE)
+    score_width = score_to_print.get_rect().width
+    screen.blit(score_to_print, [ (XMAX/2  - score_width )/2 + XMAX/2, YMAX/2 ] )
 
 # --- Go ahead and update the screen with what we've drawn. Graphics won't be drawn to screen without this
     pygame.display.flip()
