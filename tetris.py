@@ -1,14 +1,14 @@
 # Second attempt at tetris clone
 
 # TODO
-# 0. REDO, softcoding in the dimensions - DONE
-# 1. Rotate using spacebar - DONE
-# 2. Stop when the piece is blocked by lower pieces - DONE
-# 3. Clear the line if we have a full line - DONE
-# 4. Look into scoring - DONE
+##### 0. REDO, softcoding in the dimensions - DONE
+##### 1. Rotate using spacebar - DONE
+##### 2. Stop when the piece is blocked by lower pieces - DONE
+##### 3. Clear the line if we have a full line - DONE
+##### 4. Look into scoring - DONE
 # 5. Drop instantly using K_DOWN - fast drop
 # 6. Show outline of where the piece is due to land
-# 7. Implement levels - DONE
+##### 7. Implement levels - DONE
 # 8. Implement a high score system 
 # 9. End if the top layer isn't clear
 # 10. Start with a spacebar
@@ -256,7 +256,6 @@ class Shape:
         for line_number in range(20):
             if 0 not in saved[line_number]:
                 lines.append(line_number)
-                break # not sure I need this? I'm putting it here so we only search for lines 1 at a time
         return lines # return the line numbers as a list
 
     def clear_lines(self): # if we have any full lines, this method will delete them
