@@ -17,7 +17,7 @@
 ##### 13. Want to be able to move it once when it has stopped to either the left or the right - DONE
 ##### 14. Set up a bonus score for consecutive clears - DONE
 ##### 15. Give extra points for a tetris too (clearing 4 lines at once) - DONE
-# 16. Show the next 3(/5?) pieces on the side
+##### 16. Show the next 3(/5?) pieces on the side - DONE
 
 
 import pygame
@@ -76,7 +76,6 @@ level = INITIAL_LEVEL
 # get the blocks to drop
 drop = pygame.USEREVENT + 1 # this event is to drop the piece one block
 pygame.time.set_timer(drop, (INITIAL_SPEED * (2**(level-1)))/(3**(level-1)) ) # set frequency of falling block (I've initially set it to 1 per second)
-
 
 
 
