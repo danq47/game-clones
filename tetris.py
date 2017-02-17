@@ -8,7 +8,7 @@
 ##### 4. Look into scoring - DONE
 # 5. Drop instantly using K_DOWN - fast drop
 # 6. Show outline of where the piece is due to land
-##### 7. Implement levels - DONE
+# 7. Implement levels - doesn't change speed yet
 # 8. Implement a high score system 
 # 9. End if the top layer isn't clear
 # 10. Start with a spacebar
@@ -53,7 +53,7 @@ CYAN     = (   0, 255, 255)
 
 # ----- Global Variables ------
 
-saved=[[0 for ixx in range(WIDTH)] for jxx in range(HEIGHT)] # This stores which blocks have been saved
+saved=[[0]*WIDTH for _ in range(HEIGHT)] # This stores which blocks have been saved
 score=0 
 combo_length = 0 # consecutive pieces clearing lines adds a combo score
 level=1 # this will increase speed and also score
@@ -172,13 +172,13 @@ class Shape:
 
 # ----- Functions to actually move left,right,down -----
 
-    def drop_one(self):
+    def drop_one(self,saved_list):
         if self.check_below():
             self.y+=1
             self.get_piece_coordinates()
             return True
         else:
-            self.save_piece()
+            self.save_piece(saved_list)
             return False
 
 
@@ -229,24 +229,14 @@ class Shape:
                 undo_rotate(self)
 
 
-        # # if self.check_current(): # check we haven't landed on any other pieces
-        # #     pass
-        # # else:
-        # if self.check_right(): # try moving right
-        #     self.move_right()
-        # elif self.check_left(): # then try moving left
-        #     self.move_left()
-        # else: # otherwise just rotate back 
-        #     for _ in range(3): # rotate back 3 more times (i.e. no rotation at all)
-        #         self.piece_matrix = zip(*self.piece_matrix) # Take the transpose, but now they are given in tuples, so we will have to map(list, matrix)
-        #         self.piece_matrix = map ( list , self.piece_matrix ) # turn it back into lists, and then write backwards. This gives the matrix rotated 90degrees anticlockwise
-        #         self.get_piece_coordinates()
 
 # ------ Save the pieces that reach the bottom/another piece ----
 
-    def save_piece(self): # if it's not clear below then save the pieces
+    def save_piece(self,saved_list): # if it's not clear below then save the pieces
+    
         for _ in range(4):
-            saved[self.y_coords[_]][self.x_coords[_]] = self.colour
+            print(self.x_coords[_],self.y_coords[_])
+            saved_list[self.y_coords[_]][self.x_coords[_]] = self.colour
 
 
 # ------ Check to see if we have any full lines ------
@@ -260,7 +250,6 @@ class Shape:
 
     def clear_lines(self): # if we have any full lines, this method will delete them
 
-        empty_line = [0 for _ in range(10) ] # empty line
         lines_to_clear=self.check_for_lines()
         score_to_add = { 1:40, 2:100, 3:300, 4:1200 } # score per number of lines cleared
         
@@ -271,10 +260,11 @@ class Shape:
             score += current_level*score_to_add[ len(lines_to_clear) ]  # add score
             total_lines_cleared += len(lines_to_clear) # add to lines
             level = total_lines_cleared/10 + 1 # increase level every 10 lines we clear
+            #pygame.time.set_timer(drop, (500 * (2**(level-1)))/(3**(level-1)) )
 
             for line in lines_to_clear:
                 saved.pop(line) # delete the line
-                saved.insert( 0, empty_line ) # insert new line at the top
+                saved.insert( 0, [0 for _ in range(10) ] ) # insert new line at the top
 
 # ------ Convert from block location to actual coordintes -------
 def to_coords(x,y):
@@ -294,13 +284,14 @@ font = pygame.font.SysFont('Times', 25, True, False)
 
 # get the blocks to drop
 drop = pygame.USEREVENT + 1 # this event is to drop the piece one block
-pygame.time.set_timer(drop, 600 ) # drop every 100 ms
+pygame.time.set_timer(drop, 100 ) # drop every 100 ms
 
 # Loop until the user clicks the close button.
 done=False
 
 # Used to manage how fast the screen updates
 clock = pygame.time.Clock()
+
 
 while not done:
 
@@ -314,7 +305,7 @@ while not done:
             done = True
         elif event.type == drop:
             try:
-                drop_test=falling_piece.drop_one()
+                drop_test=falling_piece.drop_one(saved)
                 if not drop_test:
                     del(falling_piece)
             except NameError:
@@ -354,7 +345,7 @@ while not done:
     if keys[pygame.K_DOWN]:
         drop_test=True 
         try:
-            drop_test=falling_piece.drop_one()
+            drop_test=falling_piece.drop_one(saved)
             score+=1
         except NameError:
             pass 
@@ -414,112 +405,6 @@ while not done:
 
 # --- Go ahead and update the screen with what we've drawn. Graphics won't be drawn to screen without this
     pygame.display.flip()
-
-
-#     for event in pygame.event.get(): # User did something
-#         if event.type == pygame.QUIT: # If user clicked close
-#             done = True # Flag that we are done so we exit this loop
-#         elif event.type == pygame.KEYDOWN:
-#             if event.key == pygame.K_ESCAPE:
-#                 done = True
-#             elif event.key == pygame.K_SPACE:
-#                 falling_piece.rotate() 
-#             elif event.key == pygame.K_RIGHT:
-#                 try:
-#                     if check_move_right( falling_piece.x_coords, falling_piece.y_coords, saved ):
-#                         falling_piece.move_right()
-#                 except NameError:
-#                     pass
-#             elif event.key == pygame.K_LEFT:
-#                 try:
-#                     if check_move_left( falling_piece.x_coords, falling_piece.y_coords, saved ):
-#                         falling_piece.move_left()
-#                 except NameError:
-#                     pass
-#             # elif event.key == pygame.K_DOWN:
-#             #     try:
-#             #         falling_piece.drop_one()
-#             #     except NameError:
-#             #         pass
-#         elif event.type == drop:
-#             try:
-#                 falling_piece.drop_one()
-#             except NameError:
-#                 falling_piece=Shape(random.randint(1,7))
-
-
-
-# # 0. Keep dropping the piece if we press down (turbodrop)
-#     keys = pygame.key.get_pressed()
-#     if keys[pygame.K_DOWN]:
-#         try:
-#             if check_if_clear( falling_piece.x_coords, falling_piece.y_coords, saved ):
-#                 falling_piece.drop_one()
-#         except NameError:
-#             falling_piece=Shape(random.randint(1,7))
-
-
-
-
-# # 1. Fill the screen with black
-#     screen.fill(BLACK)
-
-# # 2. Check if we already have a piece. If not, create one.
-
-#     try:
-#         falling_piece
-#     except NameError:
-#         falling_piece=Shape(random.randint(1,7))
-#     else:
-#         pass
-
-
-
-# # 4. Check if it is clear under piece
-#     if check_if_clear( falling_piece.x_coords, falling_piece.y_coords, saved ):
-#         pass # that's OK
-#     else: # save block positions, and delete block
-#         for _ in range(4):
-#             saved.append( [ falling_piece.x_coords[_], falling_piece.y_coords[_], falling_piece.colour ] )
-#             # print(stored_blocks)
-#         del(falling_piece)
-
-# # 5. Print the saved blocks (ones that have reached the bottom, or are on top of other blocks)
-#     for block in saved:
-#         colour = block[2]
-#         x      = block[0]
-#         y      = block[1]
-#         pygame.draw.rect( screen, colour, [ x, y, BLOCK_SIZE, BLOCK_SIZE ] )
-
-
-
-# # 6. Check for complete lines
-
-#     # check_for_lines(saved)
-
-    
-
-
-
-
-
-
-
-
-# # 1.b draw the game area
-#     for i in range(11):
-#         pygame.draw.line(screen, GREY, [50 + BLOCK_SIZE*i , 100], [50 + BLOCK_SIZE*i , 700])
-#     for i in range(21):
-#         pygame.draw.line(screen, GREY, [50,100 + BLOCK_SIZE*i], [350,100 + BLOCK_SIZE*i])
-# # 1.c Print score
-#     score_to_print = font.render("SCORE:"+str(score),True,WHITE)
-#     score_width = score_to_print.get_rect().width
-#     screen.blit(score_to_print, [ (XMAX/2  - score_width )/2 + XMAX/2, YMAX/2 ] )
-
-# # --- Go ahead and update the screen with what we've drawn. Graphics won't be drawn to screen without this
-#     pygame.display.flip()
- 
-
 
 
 
