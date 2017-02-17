@@ -8,15 +8,15 @@
 ##### 4. Look into scoring - DONE
 # 5. Drop instantly using K_DOWN - fast drop
 # 6. Show outline of where the piece is due to land
-# 7. Implement levels - doesn't change speed yet
+##### 7. Implement levels - doesn't change speed yet - DONE
 # 8. Implement a high score system 
 # 9. End if the top layer isn't clear
 # 10. Start with a spacebar
-# 11. When rotating, check that we won't rotate INTO other blocks 
-# 12. RELATED - also need to check that the piece can't rotate out of the board 
-# 13. Want to be able to move it once when it has stopped to either the left or the right
+##### 11. When rotating, check that we won't rotate INTO other blocks - DONE
+##### 12. RELATED - also need to check that the piece can't rotate out of the board -DONE
+##### 13. Want to be able to move it once when it has stopped to either the left or the right - DONE
 # 14. Set up a bonus score for consecutive clears
-# 15. Give extra points for a tetris too (clearing 4 lines at once) - DONE
+##### 15. Give extra points for a tetris too (clearing 4 lines at once) - DONE
 # 16. Show the next 3(/5?) pieces on the side
 
 
@@ -31,6 +31,8 @@ import numpy as np
 BLOCK_SIZE=30 # Size of block squares
 HEIGHT=20     # playing grid height (in blocks)
 WIDTH=10      # playing grid width (in blocks)
+INITIAL_SPEED=1000 # 1000 ms per block drop
+INITIAL_LEVEL=3 # this will increase speed and also score
 XMAX=5*BLOCK_SIZE*WIDTH/2
 YMAX=BLOCK_SIZE*HEIGHT + 150
 LEFT_EDGE=2*BLOCK_SIZE # left edge of grid
@@ -56,9 +58,25 @@ CYAN     = (   0, 255, 255)
 saved=[[0]*WIDTH for _ in range(HEIGHT)] # This stores which blocks have been saved
 score=0 
 combo_length = 0 # consecutive pieces clearing lines adds a combo score
-level=1 # this will increase speed and also score
 queue=[random.randint(1,7) for _ in range(5)] # these are the pieces that are coming up 
 total_lines_cleared=0
+
+
+# ----- initialise pygame -----
+pygame.init()
+clock = pygame.time.Clock()
+size = (XMAX, YMAX)
+screen = pygame.display.set_mode(size)
+pygame.display.set_caption("Tetris") # title in window bar
+font = pygame.font.SysFont('Times', 25, True, False)
+# Loop until the user clicks the close button.
+done=False
+level = INITIAL_LEVEL
+# get the blocks to drop
+drop = pygame.USEREVENT + 1 # this event is to drop the piece one block
+pygame.time.set_timer(drop, (INITIAL_SPEED * (2**(level-1)))/(3**(level-1)) ) # set frequency of falling block (I've initially set it to 1 per second)
+
+
 
 
 
@@ -341,8 +359,8 @@ class Shape:
             current_level = level # calculate the current level for calculating the score
             score += current_level*score_to_add[ len(lines_to_clear) ]  # add score
             total_lines_cleared += len(lines_to_clear) # add to lines
-            level = total_lines_cleared/10 + 1 # increase level every 10 lines we clear
-            #pygame.time.set_timer(drop, (500 * (2**(level-1)))/(3**(level-1)) )
+            level = total_lines_cleared/10 + INITIAL_LEVEL # increase level every 10 lines we clear
+            pygame.time.set_timer(drop, (INITIAL_SPEED * (2**(level-1)))/(3**(level-1)) ) # if we go up a level, increase speed
 
             for line in lines_to_clear:
                 saved.pop(line) # delete the line
@@ -355,24 +373,18 @@ def to_coords(x,y):
     return [x_out,y_out]
 
 
-# initialise pygame
-pygame.init()
-# open a window
-size = (XMAX, YMAX)
-screen = pygame.display.set_mode(size)
-pygame.display.set_caption("Tetris") # title in window bar
-font = pygame.font.SysFont('Times', 25, True, False)
 
 
-# get the blocks to drop
-drop = pygame.USEREVENT + 1 # this event is to drop the piece one block
-pygame.time.set_timer(drop, 500 ) # drop every 100 ms
 
-# Loop until the user clicks the close button.
-done=False
 
-# Used to manage how fast the screen updates
-clock = pygame.time.Clock()
+
+
+
+# ------ GAME LOOP -------
+
+
+
+
 
 
 while not done:
