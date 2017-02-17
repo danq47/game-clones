@@ -15,7 +15,7 @@
 ##### 11. When rotating, check that we won't rotate INTO other blocks - DONE
 ##### 12. RELATED - also need to check that the piece can't rotate out of the board -DONE
 ##### 13. Want to be able to move it once when it has stopped to either the left or the right - DONE
-# 14. Set up a bonus score for consecutive clears
+##### 14. Set up a bonus score for consecutive clears - DONE
 ##### 15. Give extra points for a tetris too (clearing 4 lines at once) - DONE
 # 16. Show the next 3(/5?) pieces on the side
 
@@ -58,7 +58,7 @@ CYAN     = (   0, 255, 255)
 saved=[[0]*WIDTH for _ in range(HEIGHT)] # This stores which blocks have been saved
 score=0 
 combo_length = 0 # consecutive pieces clearing lines adds a combo score
-queue=[random.randint(1,7) for _ in range(5)] # these are the pieces that are coming up 
+queue=[random.randint(1,7) for _ in range(6)] # these are the pieces that are coming up 
 total_lines_cleared=0
 game_over=False
 
@@ -267,8 +267,28 @@ class Shape:
             self.get_piece_coordinates()
 
 
+    def to_queue(self,position): # move to the queue
+
+        self.x = 15
+        self.y = 3
+
+        if self.shape == 2 :
+            self.x -= 1
+
+
+
+        self.y += 3*(position-1)
+
+        self.get_piece_coordinates()
+
+
 # ----- ROTATIONS ------
 
+    # def queue_rotate(self):
+
+    #     self.piece_matrix = zip(*self.piece_matrix) # Take the transpose, but now they are given in tuples, so we will have to map(list, matrix)
+    #     self.piece_matrix = map ( list , self.piece_matrix )[::-1] # turn it back into lists, and then write backwards. This gives the matrix rotated 90degrees anticlockwise
+    #     self.get_piece_coordinates()
 
 
     def rotate(self):
@@ -407,7 +427,6 @@ while not done:
     clock.tick(60)
 
 
-
     for event in pygame.event.get(): # loop over all user events
         if event.type == pygame.QUIT:
             done = True
@@ -443,7 +462,9 @@ while not done:
     try:
         falling_piece
     except NameError:
-        falling_piece=Shape(random.randint(1,7))
+        falling_piece=Shape(queue[0])
+        queue.pop(0) # drop the first number in the queue
+        queue = queue + [random.randint(1,7)] # add a new one at the end
     else:
         pass
 
@@ -492,6 +513,26 @@ while not done:
     for y in [BLOCK_SIZE*ixx + UPPER_EDGE for ixx in xrange(HEIGHT+1)]:
         pygame.draw.line(screen, GREY, [ LEFT_EDGE, y], [RIGHT_EDGE, y] )
 
+# --- draw the queue ----
+
+    queue_shapes=[0,0,0,0,0]
+
+    for _ in range(5):
+        queue_shapes[_] = Shape(queue[_])
+        queue_shapes[_].to_queue(_)
+
+    for shape in queue_shapes:
+        for _ in range(4):
+            pygame.draw.rect( screen, shape.colour, [LEFT_EDGE + shape.x_coords[_]*BLOCK_SIZE ,\
+            UPPER_EDGE + shape.y_coords[_]*BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE])
+
+    for x in [BLOCK_SIZE*ixx + RIGHT_EDGE + 4*BLOCK_SIZE for ixx in xrange(6)]:
+        pygame.draw.line(screen, GREY, [ x, LOWER_EDGE - 4*BLOCK_SIZE], [x, UPPER_EDGE ] )
+
+    for y in [BLOCK_SIZE*ixx + UPPER_EDGE for ixx in xrange(HEIGHT-3)]:
+        pygame.draw.line(screen, GREY, [ RIGHT_EDGE + 4*BLOCK_SIZE, y], [RIGHT_EDGE + 4*BLOCK_SIZE + 5*BLOCK_SIZE, y] )
+
+
 # --- Print score, lines cleared, level ---
     score_to_print = font.render("SCORE:"+str(score),True,WHITE)
     lines_to_print = font.render("LINES:"+str(total_lines_cleared),True,WHITE)
@@ -501,9 +542,9 @@ while not done:
     level_width = level_to_print.get_rect().width
     box_height = score_to_print.get_rect().height
     maxwidth=max([score_width,lines_width,level_width])
-    screen.blit(level_to_print, [ (XMAX/2  - maxwidth )/2 + XMAX/2, 3*YMAX/4 ] )
-    screen.blit(lines_to_print, [ (XMAX/2  - maxwidth )/2 + XMAX/2, 3*YMAX/4 + box_height ] )
-    screen.blit(score_to_print, [ (XMAX/2  - maxwidth )/2 + XMAX/2, 3*YMAX/4 + 2*box_height ] )
+    screen.blit(level_to_print, [ (XMAX/2  - maxwidth )/2 + XMAX/2, 3*YMAX/4 +2*box_height] )
+    screen.blit(lines_to_print, [ (XMAX/2  - maxwidth )/2 + XMAX/2, 3*YMAX/4 +3*box_height ] )
+    screen.blit(score_to_print, [ (XMAX/2  - maxwidth )/2 + XMAX/2, 3*YMAX/4 +4*box_height ] )
 
 # --- Go ahead and update the screen with what we've drawn. Graphics won't be drawn to screen without this
     pygame.display.flip()
