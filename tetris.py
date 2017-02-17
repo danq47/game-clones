@@ -32,7 +32,7 @@ BLOCK_SIZE=30 # Size of block squares
 HEIGHT=20     # playing grid height (in blocks)
 WIDTH=10      # playing grid width (in blocks)
 INITIAL_SPEED=1000 # 1000 ms per block drop
-INITIAL_LEVEL=3 # this will increase speed and also score
+INITIAL_LEVEL=1 # this will increase speed and also score
 XMAX=5*BLOCK_SIZE*WIDTH/2
 YMAX=BLOCK_SIZE*HEIGHT + 150
 LEFT_EDGE=2*BLOCK_SIZE # left edge of grid
@@ -335,8 +335,18 @@ class Shape:
 # ------ Save the pieces that reach the bottom/another piece ----
 
     def save_piece(self,saved_list): # if it's not clear below then save the pieces
+
+        global combo_length # checks if we have consecutive line clears. if so, we get a bonus
+
         for _ in range(4):
             saved_list[self.y_coords[_]][self.x_coords[_]] = self.colour
+
+        if self.check_for_lines() == [] : # no combo
+            combo_length = 0
+        else:
+            combo_length += 1
+
+        self.clear_lines()
 
 
 # ------ Check to see if we have any full lines ------
@@ -353,11 +363,11 @@ class Shape:
         lines_to_clear=self.check_for_lines()
         score_to_add = { 1:40, 2:100, 3:300, 4:1200 } # score per number of lines cleared
         
-        global level, score, total_lines_cleared # we are using the global variables here
+        global level, score, total_lines_cleared, combo_length # we are using the global variables here
         
         if len(lines_to_clear) > 0 :
-            current_level = level # calculate the current level for calculating the score
-            score += current_level*score_to_add[ len(lines_to_clear) ]  # add score
+            score += level*score_to_add[ len(lines_to_clear) ]  # add score
+            score += level * ( combo_length - 1 ) * 50 # add points for combos
             total_lines_cleared += len(lines_to_clear) # add to lines
             level = total_lines_cleared/10 + INITIAL_LEVEL # increase level every 10 lines we clear
             pygame.time.set_timer(drop, (INITIAL_SPEED * (2**(level-1)))/(3**(level-1)) ) # if we go up a level, increase speed
@@ -429,7 +439,7 @@ while not done:
     try:
         falling_piece
     except NameError:
-        falling_piece=Shape(random.randint(1,7))
+        falling_piece=Shape(random.randint(2,2))
     else:
         pass
 
@@ -469,12 +479,6 @@ while not done:
                 y_to_print=to_coords(x,y)[1]
                 pygame.draw.rect( screen, saved[y][x], [ x_to_print, y_to_print, BLOCK_SIZE, BLOCK_SIZE])
 
-# 4. Clear lines
-
-    try:
-        falling_piece.clear_lines()
-    except NameError:
-        pass
 
 # --- draw the game area ---
 
