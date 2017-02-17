@@ -4,6 +4,13 @@ import pygame
 import math
 import random
 
+# TODO
+# 1. Figuure out how to get the tail to follow
+# 2. Implement food which grows the snake
+# 3. Conditions for death
+# 4. "queue" moves i.e. if I press up then lef in quick succsession, the the snake should first turn up, thenleft on its next move
+# 5. high scores
+
 # ----- CONSTANTS -----
 
 BLOCK_SIZE=10 # Size of block squares
@@ -47,14 +54,31 @@ pygame.time.set_timer(move, SPEED / LEVEL )
 
 class Snake:
 
+
     def __init__(self):
 
-        self.x  = START_POSITION[0]
-        self.y  = START_POSITION[1]
+        self.length = 7
+        self.position = []
+
+        for _ in range(self.length):
+            self.position.append( [START_POSITION[0] + _ , START_POSITION[1] ] )
+
+        # self.x = START_POSITION[0]
+        # self.y = START_POSITION[1]
+        
         self.vx = speed[0]
         self.vy = speed[1]
 
-        self.update_position()
+
+
+
+
+        
+    def update_position(self):
+
+        self.x_coord = self.x*BLOCK_SIZE + LEFT_EDGE 
+        self.y_coord = self.y*BLOCK_SIZE + UPPER_EDGE
+
         
 
     def get_direction(self):
@@ -69,17 +93,16 @@ class Snake:
             self.direction = 4 # right
 
 
-    def update_position(self):
-
-        self.x_coord = self.x*BLOCK_SIZE + LEFT_EDGE
-        self.y_coord = self.y*BLOCK_SIZE + UPPER_EDGE
-
     def move(self):
 
-        self.x+=self.vx
-        self.y+=self.vy
-        self.update_position()
-        return [self.vx , self.vy]
+        x1=self.position[0][0]+self.vx
+        y1=self.position[0][1]+self.vy
+
+        self.position.insert( 0 , [ x1 , y1 ] )
+        self.position.pop(-1)
+
+        return [ self.vx , self.vy ]
+
 
 
     def turn_up(self,last_move):
@@ -110,7 +133,11 @@ class Snake:
 
 
 
+def to_coords(x1,y1): # write in terms of absolute coordinates (rather than just defined in terms of my board)
 
+    x = x1*BLOCK_SIZE + LEFT_EDGE
+    y = y1*BLOCK_SIZE + UPPER_EDGE
+    return [x,y]
 
 
 
@@ -169,8 +196,9 @@ while not done:
 
 # 3. Draw the snake
 
-
-    pygame.draw.rect(screen, GREEN, [snake.x_coord, snake.y_coord, BLOCK_SIZE, BLOCK_SIZE])
+    for _ in range( snake.length ):
+        [x,y] = to_coords(snake.position[_][0], snake.position[_][1])
+        pygame.draw.rect(screen, GREEN, [x*.88, y*.88, BLOCK_SIZE*.76, BLOCK_SIZE*.76])
 
     pygame.display.flip()
 
