@@ -10,7 +10,7 @@
 # 6. Show outline of where the piece is due to land
 ##### 7. Implement levels - doesn't change speed yet - DONE
 # 8. Implement a high score system 
-# 9. End if the top layer isn't clear
+##### 9. End if the top layer isn't clear - DONE
 # 10. Start with a spacebar
 ##### 11. When rotating, check that we won't rotate INTO other blocks - DONE
 ##### 12. RELATED - also need to check that the piece can't rotate out of the board -DONE
@@ -60,6 +60,7 @@ score=0
 combo_length = 0 # consecutive pieces clearing lines adds a combo score
 queue=[random.randint(1,7) for _ in range(5)] # these are the pieces that are coming up 
 total_lines_cleared=0
+game_over=False
 
 
 # ----- initialise pygame -----
@@ -336,7 +337,7 @@ class Shape:
 
     def save_piece(self,saved_list): # if it's not clear below then save the pieces
 
-        global combo_length # checks if we have consecutive line clears. if so, we get a bonus
+        global combo_length, game_over # checks if we have consecutive line clears. if so, we get a bonus
 
         for _ in range(4):
             saved_list[self.y_coords[_]][self.x_coords[_]] = self.colour
@@ -347,6 +348,9 @@ class Shape:
             combo_length += 1
 
         self.clear_lines()
+
+        if any(saved[0][ixx] != 0 for ixx in range(3,7)): # if any of the 4 starting blocks are full then the game is over
+            game_over = True
 
 
 # ------ Check to see if we have any full lines ------
@@ -439,7 +443,7 @@ while not done:
     try:
         falling_piece
     except NameError:
-        falling_piece=Shape(random.randint(2,2))
+        falling_piece=Shape(random.randint(1,7))
     else:
         pass
 
@@ -504,7 +508,8 @@ while not done:
 # --- Go ahead and update the screen with what we've drawn. Graphics won't be drawn to screen without this
     pygame.display.flip()
 
-
+    if game_over :
+        done = True
 
 
 pygame.quit()
