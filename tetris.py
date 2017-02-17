@@ -125,17 +125,31 @@ class Shape:
         return passed
 
 
+    def check_above(self): # check that above is clear
+        passed = True
+    
+        for _ in range(4):
+            if self.x_coords[_] < 0 or self.x_coords >= WIDTH : # one of the bits at least is off the board
+                passed = False
+            elif self.y_coords[_] >= 0 :# don't start checking until piece is on the board
+                if self.y_coords[_] <= HEIGHT  and saved[ self.y_coords[_] - 1 ][ self.x_coords[_] ] != 0: # if any of the pieces have a saved block above them
+                    passed = False
+
+
+        return passed
+
+
     def check_left(self):
         passed = True
 
-        if min(self.x_coords) <= 0 : # if we've reached the left wall
-            passed = False
-
         for _ in range(4):
-            if self.y_coords[_] >= 0:
-                if self.x_coords[_] <= WIDTH : # without this, the line block can move 2 spaces out of the grid, giving an x coordinate of 11 - this crashes as (saved.x - 1) only goes up to (10 - 1) = 9. There's obviously nothing stored outside the grid, so we can ignore this
-                    if min(self.x_coords) > 0 and saved[ self.y_coords[_] ][ self.x_coords[_] - 1 ] != 0:
-                        passed = False
+            if self.x_coords[_] < 0 or self.x_coords[_] >= WIDTH : # one of the blocks at least is off the board
+                passed = False
+            elif self.x_coords[_] == 0 : # we've reached the left wall, can't go further
+                passed = False
+            elif self.y_coords[_] >= 0 : # start counting once the pieces are on the board
+                if saved[ self.y_coords[_] ][ self.x_coords[_] - 1 ] != 0 : # there is a saved block in the way
+                    passed = False
 
         return passed
 
@@ -143,29 +157,31 @@ class Shape:
     def check_right(self):
         passed = True
 
-        if max(self.x_coords) >= WIDTH - 1 : # if we've reached the right wall
-            passed = False
-
         for _ in range(4):
-            if self.y_coords[_] >= 0:
-                if self.x_coords[_] > 0 : # just to make sure we're only checking saved blocks inside the grid. rotating can move our piece temporarily outside so sometimes the check method ends up checking blocks at saved[*][-1] or [-2] which are actually saved[*][8] and [9] respectively
-                    if max(self.x_coords) < WIDTH - 1 and saved[ self.y_coords[_] ][ self.x_coords[_] + 1 ] != 0:
-                        passed = False
+            if self.x_coords[_] < 0 or self.x_coords[_] >= WIDTH : # one of the blocks at least is off the board
+                passed = False
+            elif self.x_coords[_] == WIDTH - 1 : # we've reached the right wall, can't go further
+                passed = False
+            elif self.y_coords[_] >= 0 : # start counting once the pieces are on the board
+                if saved[ self.y_coords[_] ][ self.x_coords[_] + 1 ] != 0 : # there is a saved block in the way
+                    passed = False
 
         return passed
 
 
+
     def check_current(self): # check our current location - this is for rotations
-        passed = True
+        passed = True # 0 means the piece is OK, 1 means it's too low (rotated out the bottom), 2 means it's too far left, 3 means it's too far right,4 means it's on another piece
+
 
         for _ in range(4):
-            if self.x_coords[_] < 0 : # gone too far left
+            if self.y_coords[_] >= HEIGHT : # gone too low
+                passed = False
+            elif self.x_coords[_] < 0 : # gone too far left
                 passed = False
             elif self.x_coords[_] >= WIDTH : # gone too far right
                 passed = False
             elif saved[ self.y_coords[_] ][ self.x_coords[_] ] != 0 :
-                passed = False
-            if self.y_coords[_] >= HEIGHT : # gone too low
                 passed = False
 
         return passed
@@ -181,26 +197,64 @@ class Shape:
             self.save_piece(saved_list)
             return False
 
+    def move_down(self,forced=False): # move down (only for fixing rotations)
+        self.y+=1
+        self.get_piece_coordinates()
 
 
-    def move_right(self): # move piece right
-        if self.check_right() :
+    def move_right(self,forced=False): # move piece left
+
+        move = False
+
+        if forced == True : 
+            move = True
+        else:
+            if self.check_right() : 
+                move = True
+
+        if move :
             self.x+=1
             self.get_piece_coordinates()
 
 
-    def move_left(self): # move piece left
-        if self.check_left():
+    def move_left(self,forced=False): # move piece left
+
+        move = False
+
+        if forced == True : 
+            move = True
+        else:
+            if self.check_left() : 
+                move = True
+
+        if move :
             self.x-=1
+            self.get_piece_coordinates()
+
+
+
+    def move_up(self,forced=False):
+
+        move = False
+
+        if forced == True :
+            move = True
+        else:
+            if self.check_above():
+                move = True
+
+        if move :
+            self.y-=1
             self.get_piece_coordinates()
 
 
 # ----- ROTATIONS ------
 
 
+
     def rotate(self):
 
-        passed = True
+        passed_first_time = False # check whether our rotation has passed (i.e. is in a valid position) after the first set of wall/floor kicks
 
         def undo_rotate(self):
             for _ in range(3):
@@ -212,30 +266,58 @@ class Shape:
         self.piece_matrix = map ( list , self.piece_matrix )[::-1] # turn it back into lists, and then write backwards. This gives the matrix rotated 90degrees anticlockwise
         self.get_piece_coordinates()
 
-        if self.check_current(): # check we haven't rotated out of the board left or right, or onto any saved pieces
+
+
+        if self.check_current() : # check we haven't rotated out of the board left or right, or onto any saved pieces
             pass
+
         else:
-            if self.check_right() :
-                self.move_right()
-                if self.shape == 2 and self.check_current() == False: # the line shape can move 2 out of the grid in a rotation
-                    if self.check_right() :
-                        self.move_right()
-            elif self.check_left():
-                self.move_left()
-                if self.shape == 2 and self.check_current() == False:
-                    if self.check_left() :
-                        self.move_left()
+            self.move_up(True)
+            if self.check_current() :
+                passed_first_time = True
             else:
-                undo_rotate(self)
+                self.move_down(True)
+                self.move_left(True)
+                if self.check_current() :
+                    passed_first_time = True
+                else:
+                    self.move_right(True)
+                    self.move_right(True)
+                    if self.check_current() :
+                        passed_first_time = True
+                    else:
+                        self.move_left(True)
+                        if self.shape != 2 :
+                            undo_rotate(self)
+
+
+            if self.shape == 2 and passed_first_time == False : # if it's an I and the first set of wall/floor kicks hasn't worked
+                for _ in range(2):
+                    self.move_up(True) # force a double move up
+                if self.check_current() : 
+                    pass
+                else:
+                    for _ in range(2): # double move down and left
+                        self.move_down(True)
+                        self.move_left(True)
+                    if self.check_current() :
+                        pass
+                    else:
+                        for _ in range(4):
+                            self.move_right(True)
+                        if self.check_current() :
+                            pass
+                        else:
+                            for _ in range(2):
+                                self.move_left(True)
+                            undo_rotate(self)
 
 
 
 # ------ Save the pieces that reach the bottom/another piece ----
 
     def save_piece(self,saved_list): # if it's not clear below then save the pieces
-    
         for _ in range(4):
-            print(self.x_coords[_],self.y_coords[_])
             saved_list[self.y_coords[_]][self.x_coords[_]] = self.colour
 
 
@@ -284,7 +366,7 @@ font = pygame.font.SysFont('Times', 25, True, False)
 
 # get the blocks to drop
 drop = pygame.USEREVENT + 1 # this event is to drop the piece one block
-pygame.time.set_timer(drop, 100 ) # drop every 100 ms
+pygame.time.set_timer(drop, 500 ) # drop every 100 ms
 
 # Loop until the user clicks the close button.
 done=False
@@ -335,7 +417,7 @@ while not done:
     try:
         falling_piece
     except NameError:
-        falling_piece=Shape(random.randint(2,2))
+        falling_piece=Shape(random.randint(1,7))
     else:
         pass
 
