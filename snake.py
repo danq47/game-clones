@@ -36,6 +36,7 @@ size = (XMAX, YMAX)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("SNAKE") # title in window bar
 font = pygame.font.SysFont('Times', 25, True, False)
+level = 5
 
 
 
@@ -62,6 +63,7 @@ class GameMenu:
 
         while not done:
 
+            global level
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT: done = True
@@ -81,6 +83,11 @@ class GameMenu:
                             self.output="quit_game"
                             done = True
 
+                    if selected == 1 :
+                        if event.key == pygame.K_LEFT :
+                            level -= 1
+                        elif event.key == pygame.K_RIGHT:
+                            level += 1
 
 # draw screen background
                 self.screen.fill(self.background_colour)
@@ -88,12 +95,16 @@ class GameMenu:
 # write the menu items
                 items_to_print=[] # get the menu items rendered as a font
                 item_widths=[]    # get the widths of the items so we can line them up equally
-
                 for ixx in range(len(self.items)) : # loop over items to print
-                    if ixx == selected :
-                        tmp = font.render(self.items[ixx],True,BLUE)
+                    if self.items[ixx] == "Level:" :
+                        menu_item = self.items[ixx]+str(level)
                     else:
-                        tmp = font.render(self.items[ixx],True,GREEN)
+                        menu_item = self.items[ixx]
+
+                    if ixx == selected :
+                        tmp = font.render(menu_item,True,BLUE)
+                    else:
+                        tmp = font.render(menu_item,True,GREEN)
                     items_to_print.append(tmp)
                     item_widths.append(tmp.get_rect().width)
 
@@ -139,8 +150,6 @@ class GameScreen:
             snake.append( [START_POSITION[0] + _ , START_POSITION[1] ] )
         score=0
         game_over = False
-        level=3 # this will increase speed and also score
-
         
 
         done=False # for main game loop
@@ -243,7 +252,7 @@ if __name__ == "__main__":
     while game_running :
 
 
-        menu=GameMenu( screen, ["Start Game", "Quit"], game_functions )
+        menu=GameMenu( screen, ["Start Game", "Level:","Quit"], game_functions )
         menu.run()
         test=menu.output
         if test == "start_game" :
