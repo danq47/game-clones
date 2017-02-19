@@ -1,10 +1,10 @@
 # snake clone. Second attempt, am trying to make a menu where we can start, quit, change level, view high scores, change walls, go back to when we die
 
-import pygame
 import math
 import random
 import sys
 
+import pygame
 
 # ----- CONSTANTS -----
 
@@ -19,7 +19,6 @@ RIGHT_EDGE=XMAX - 2*BLOCK_SIZE
 UPPER_EDGE=4*BLOCK_SIZE
 LOWER_EDGE=YMAX - 2*BLOCK_SIZE
 START_POSITION=[ WIDTH/2, HEIGHT/2 ] # (x,y)
-INITIAL_LENGTH=20
 
 # ----- Define some colors -----
 BLACK    = (   0,   0,   0)
@@ -37,6 +36,7 @@ size = (XMAX, YMAX)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("SNAKE") # title in window bar
 font = pygame.font.SysFont('Times', 25, True, False)
+
 
 
 
@@ -72,7 +72,7 @@ class GameMenu:
                     elif event.key == pygame.K_UP and selected > 0: # move up the list
                         selected -= 1
 
-                    if event.key == pygame.K_SPACE : 
+                    if event.key == pygame.K_SPACE or event.key == pygame.K_RETURN : 
                         self.functions[self.items[selected]]()
                         if self.functions[self.items[selected]]() == "start game":
                             self.output="start_game"
@@ -127,16 +127,98 @@ class GameScreen:
         self.background_colour=BLACK
 
     def run(self):
+
+
+
         clock.tick(60)
-        done=False
+        snake_speed=[-1,0] # inital speed
+        last_move=[-1,0] # what was the last move, needed so we dont move snake 180 degrees
+        snake = [] 
+        snake_length=5
+        for _ in range(snake_length): # define the snake's position
+            snake.append( [START_POSITION[0] + _ , START_POSITION[1] ] )
+        score=0
+        game_over = False
+        level=3 # this will increase speed and also score
+
+        
+
+        done=False # for main game loop
+        move = pygame.USEREVENT + 1 # move the snake
+        pygame.time.set_timer(move, SPEED * ( 31**(level-1) ) / (40**(level-1)) ) 
+
+
+# ---- function definitions ------
+        def to_coords(x1,y1): # write in terms of absolute coordinates (rather than just defined in terms of my board)
+            x = x1*BLOCK_SIZE + LEFT_EDGE
+            y = y1*BLOCK_SIZE + UPPER_EDGE
+            return [x,y]
+
+        def move_snake():
+            snake_head=snake[0] # the first in the list
+            x1 = snake_head[0] + snake_speed[0]
+            y1 = snake_head[1] + snake_speed[1]
+            snake.pop(-1) # delete the tail
+            snake.insert( 0, [x1,y1] ) # add the new head in
+            return snake_speed
+
+        def up():
+            if last_move[0] != 0:
+                return [0,-1]
+            else:
+                return snake_speed
+
+        def down():
+            if last_move[0] != 0:
+                return [0,1]
+            else: return snake_speed
+
+        def left():
+            if last_move[1] != 0:
+                return [-1,0]
+            else:
+                return snake_speed
+
+        def right():
+            if last_move[1] != 0:
+                return [1,0]
+            else:
+                return snake_speed
+
+
+
 
         while not done:
 
             for event in pygame.event.get(): # loop over all user events
                 if event.type == pygame.QUIT: done = True
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE: done = True
+                if event.type == move : last_move=move_snake()
+                if event.type == pygame.KEYDOWN :
+                    if event.key == pygame.K_UP:
+                        snake_speed=up()
+                    elif event.key == pygame.K_DOWN:
+                        snake_speed=down()
+                    elif event.key == pygame.K_LEFT:
+                        snake_speed=left()
+                    elif event.key == pygame.K_RIGHT:
+                        snake_speed=right()
 
+
+
+# fill background
                 self.screen.fill(self.background_colour)
 
+# print snake
+                for _ in range( snake_length ):
+                    [x,y] = to_coords(snake[_][0], snake[_][1])
+                    if _ == 0 :
+                        pygame.draw.rect(screen, BLUE, [x, y, BLOCK_SIZE, BLOCK_SIZE])
+                    else:
+                        pygame.draw.rect(screen, GREEN, [x, y, BLOCK_SIZE, BLOCK_SIZE])
+                    pygame.draw.rect(screen, BLACK, [x, y, BLOCK_SIZE, BLOCK_SIZE], 2)
+
+# print walls
                 pygame.draw.line(screen, GREEN, [LEFT_EDGE,  LOWER_EDGE], [LEFT_EDGE,  UPPER_EDGE ] )
                 pygame.draw.line(screen, GREEN, [RIGHT_EDGE, LOWER_EDGE], [RIGHT_EDGE, UPPER_EDGE ] )
                 pygame.draw.line(screen, GREEN, [LEFT_EDGE,  LOWER_EDGE], [RIGHT_EDGE,  LOWER_EDGE] )
@@ -144,27 +226,32 @@ class GameScreen:
 
                 pygame.display.flip()
 
-        pygame.quit()
+
+
 
 if __name__ == "__main__":
 
+    game_running = True
+
     def start_game():
-        # new_game=GameScreen(screen)
         return "start game"
     def quit_game():
         return "quit game"
 
-
     game_functions={ 'Start Game':start_game, 'Quit':quit_game}
 
-    menu=GameMenu( screen, ["Start Game", "Quit"], game_functions )
-    menu.run()
-    test=menu.output
-    if test == "start_game" :
-        new_game=GameScreen(screen)
-        new_game.run()
-    elif test == "quit_game" : 
-        pygame.quit()
+    while game_running :
+
+
+        menu=GameMenu( screen, ["Start Game", "Quit"], game_functions )
+        menu.run()
+        test=menu.output
+        if test == "start_game" :
+            new_game=GameScreen(screen)
+            new_game.run()
+        elif test == "quit_game" : 
+            game_running = False
+            pygame.quit()
 
 
 
