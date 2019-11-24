@@ -23,7 +23,7 @@
 import pygame
 import math
 import random
-import numpy as np
+
 
 
 # ------ CONSTANTS ------
@@ -423,7 +423,6 @@ def to_coords(x,y):
 while not done:
 
 # --- Limit to 60 frames per second
-    clock.tick(60)
 
 
     for event in pygame.event.get(): # loop over all user events
